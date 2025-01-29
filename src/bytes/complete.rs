@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
-use crate::Complete;
+use crate::{AsChar, Complete, ExtendInto, Offset};
 use crate::Emit;
 use crate::Input;
 use crate::OutputM;
@@ -465,17 +465,16 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
+pub fn escaped_transform<I, Error, F, G, O1, O2>(
   normal: F,
   control_char: char,
   transform: G,
-) -> impl FnMut(I) -> IResult<I, Output, Error>
+) -> impl FnMut(I) -> IResult<I, I::Extender, Error>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Input + Offset + ExtendInto,
+  <I as Input>::Item: AsChar,
+  O1: ExtendInto<Extender = I::Extender>,
+  O2: ExtendInto<Extender = I::Extender>,
   F: Parser<I, Output = O1, Error = Error>,
   G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,

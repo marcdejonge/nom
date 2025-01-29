@@ -1135,11 +1135,6 @@ impl<'a, const N: usize> FindToken<&'a u8> for [u8; N] {
 /// Abstracts something which can extend an `Extend`.
 /// Used to build modified input slices in `escaped_transform`
 pub trait ExtendInto {
-  /// The current input type is a sequence of that `Item` type.
-  ///
-  /// Example: `u8` for `&[u8]` or `char` for `&str`
-  type Item;
-
   /// The type that will be produced
   type Extender;
 
@@ -1151,7 +1146,6 @@ pub trait ExtendInto {
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for [u8] {
-  type Item = u8;
   type Extender = Vec<u8>;
 
   #[inline]
@@ -1166,7 +1160,6 @@ impl ExtendInto for [u8] {
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for &[u8] {
-  type Item = u8;
   type Extender = Vec<u8>;
 
   #[inline]
@@ -1181,7 +1174,6 @@ impl ExtendInto for &[u8] {
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for str {
-  type Item = char;
   type Extender = String;
 
   #[inline]
@@ -1196,7 +1188,6 @@ impl ExtendInto for str {
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for &str {
-  type Item = char;
   type Extender = String;
 
   #[inline]
@@ -1211,7 +1202,6 @@ impl ExtendInto for &str {
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for char {
-  type Item = char;
   type Extender = String;
 
   #[inline]

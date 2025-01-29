@@ -20,6 +20,7 @@ use crate::FindToken;
 use crate::Input;
 use crate::IsStreaming;
 use crate::Mode;
+use crate::Offset;
 use crate::OutputM;
 use crate::OutputMode;
 use crate::ToUsize;
@@ -898,19 +899,18 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transform<I, Error, F, G, ExtendItem, Output>(
+pub fn escaped_transform<I, Error, F, G, O1, O2>(
   normal: F,
   control_char: char,
   transform: G,
-) -> impl Parser<I, Output = Output, Error = Error>
+) -> impl Parser<I, Output = I::Extender, Error = Error>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
-  F: Parser<I, Error = Error>,
-  G: Parser<I, Error = Error>,
+  I: Input + ExtendInto + Offset,
+  <I as Input>::Item: AsChar,
+  O1: ExtendInto<Extender = I::Extender>,
+  O2: ExtendInto<Extender = I::Extender>,
+  F: Parser<I, Output = O1, Error = Error>,
+  G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,
 {
   EscapedTransform {
@@ -918,34 +918,27 @@ where
     control_char,
     transform,
     e: PhantomData,
-    extend: PhantomData,
-    o: PhantomData,
   }
 }
 
 /// Parser implementation for [escaped_transform]
-pub struct EscapedTransform<F, G, E, ExtendItem, Output> {
+pub struct EscapedTransform<F, G, E> {
   normal: F,
   transform: G,
   control_char: char,
   e: PhantomData<E>,
-  extend: PhantomData<ExtendItem>,
-  o: PhantomData<Output>,
 }
 
-impl<I, Error: ParseError<I>, F, G, ExtendItem, Output> Parser<I>
-  for EscapedTransform<F, G, Error, ExtendItem, Output>
+impl<I, Error: ParseError<I>, F, G, O1, O2> Parser<I> for EscapedTransform<F, G, Error>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
-  F: Parser<I, Error = Error>,
-  G: Parser<I, Error = Error>,
-  Error: ParseError<I>,
+  I: Input + ExtendInto + Offset,
+  <I as Input>::Item: AsChar,
+  O1: ExtendInto<Extender = I::Extender>,
+  O2: ExtendInto<Extender = I::Extender>,
+  F: Parser<I, Output = O1, Error = Error>,
+  G: Parser<I, Output = O2, Error = Error>,
 {
-  type Output = Output;
+  type Output = I::Extender;
   type Error = Error;
 
   fn process<OM: OutputMode>(

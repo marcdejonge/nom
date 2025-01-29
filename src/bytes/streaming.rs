@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
-use crate::Emit;
+use crate::{AsChar, Emit, ExtendInto, Offset};
 use crate::Input;
 use crate::OutputM;
 use crate::Streaming;
@@ -31,7 +31,7 @@ use crate::Streaming;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: Input + Clone,
+  T: Input,
 {
   move |i: I| {
     let mut parser = super::Tag {
@@ -65,7 +65,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: Input + Clone,
+  T: Input,
 {
   move |i: I| {
     let mut parser = super::TagNoCase {
@@ -435,8 +435,8 @@ pub fn escaped<I, Error, F, G>(
   escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Input + Clone + crate::traits::Offset,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Input + Offset,
+  <I as Input>::Item: AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
@@ -478,17 +478,16 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
+pub fn escaped_transform<I, Error, F, G, O1, O2>(
   normal: F,
   control_char: char,
   transform: G,
-) -> impl FnMut(I) -> IResult<I, Output, Error>
+) -> impl FnMut(I) -> IResult<I, I::Extender, Error>
 where
-  I: Clone + crate::traits::Offset + Input,
-  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <I as Input>::Item: crate::traits::AsChar,
+  I: Input + ExtendInto + Offset,
+  <I as Input>::Item: AsChar,
+  O1: ExtendInto<Extender = I::Extender>,
+  O2: ExtendInto<Extender = I::Extender>,
   F: Parser<I, Output = O1, Error = Error>,
   G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,
